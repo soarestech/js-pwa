@@ -91,9 +91,9 @@
     <h1 id="mensagem">Olá, mundo! 👋</h1>
     <button id="botao">Mudar mensagem</button>
     <button id="tema">Alternar tema 🌙💡</button>
+    <button id="btnChangePassword">Alterar senha</button>
+    <button id="btnDeleteUser">Excluir conta</button>
     <button id="logout">Sair</button>
-    <button id="changePasswordBtn">Alterar senha 🔑</button>
-    <button id="deleteAccountBtn">Excluir conta ❌</button>
   </div>
 
   <script>
@@ -117,8 +117,8 @@
     const botao = document.getElementById('botao');
     const botaoTema = document.getElementById('tema');
     const logoutBtn = document.getElementById('logout');
-    const changePasswordBtn = document.getElementById('changePasswordBtn');
-    const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+    const btnChangePassword = document.getElementById('btnChangePassword');
+    const btnDeleteUser = document.getElementById('btnDeleteUser');
     const mensagem = document.getElementById('mensagem');
     const body = document.body;
 
@@ -160,6 +160,34 @@
         const user = request.result;
         callback(user && user.password === password);
       };
+    }
+
+    // ---------------- Funções de usuário ----------------
+    function alterarSenha(username, novaSenha, callback) {
+      const transaction = db.transaction(['usuarios'], 'readwrite');
+      const store = transaction.objectStore('usuarios');
+      const request = store.get(username);
+
+      request.onsuccess = () => {
+        const user = request.result;
+        if(user){
+          user.password = novaSenha;
+          const updateRequest = store.put(user);
+          updateRequest.onsuccess = () => callback(true);
+          updateRequest.onerror = () => callback(false);
+        } else {
+          callback(false);
+        }
+      };
+    }
+
+    function excluirUsuario(username, callback) {
+      const transaction = db.transaction(['usuarios'], 'readwrite');
+      const store = transaction.objectStore('usuarios');
+      const request = store.delete(username);
+
+      request.onsuccess = () => callback(true);
+      request.onerror = () => callback(false);
     }
 
     // ---------------- Funções de tela ----------------
@@ -234,6 +262,35 @@
       };
     });
 
+    // ---------------- Alterar senha ----------------
+    btnChangePassword.addEventListener('click', () => {
+      const user = localStorage.getItem('loggedUser');
+      if(user){
+        const novaSenha = prompt('Digite a nova senha:');
+        if(novaSenha){
+          alterarSenha(user, novaSenha, (success) => {
+            alert(success ? 'Senha alterada com sucesso!' : 'Erro ao alterar senha.');
+          });
+        }
+      }
+    });
+
+    // ---------------- Excluir usuário ----------------
+    btnDeleteUser.addEventListener('click', () => {
+      const user = localStorage.getItem('loggedUser');
+      if(user && confirm('Tem certeza que deseja excluir sua conta?')){
+        excluirUsuario(user, (success) => {
+          if(success){
+            alert('Usuário excluído com sucesso!');
+            localStorage.removeItem('loggedUser');
+            showScreen('login');
+          } else {
+            alert('Erro ao excluir usuário.');
+          }
+        });
+      }
+    });
+
     // ---------------- Mensagem ----------------
     botao.addEventListener('click', () => {
       mensagem.textContent = 'Você clicou no botão! 🚀';
@@ -255,49 +312,6 @@
       body.style.color = savedTheme === 'dark' ? '#f5f5f5' : '#333';
     }
 
-    // ---------------- Alterar senha ----------------
-    changePasswordBtn.addEventListener('click', () => {
-      const newPassword = prompt('Digite a nova senha:');
-      if (!newPassword) return;
-
-      const loggedUser = localStorage.getItem('loggedUser');
-      const transaction = db.transaction(['usuarios'], 'readwrite');
-      const store = transaction.objectStore('usuarios');
-      const request = store.get(loggedUser);
-
-      request.onsuccess = () => {
-        const user = request.result;
-        if (user) {
-          user.password = newPassword;
-          const updateRequest = store.put(user);
-          updateRequest.onsuccess = () => alert('Senha alterada com sucesso!');
-          updateRequest.onerror = () => alert('Erro ao alterar senha.');
-        }
-      };
-    });
-
-    // ---------------- Excluir conta ----------------
-    deleteAccountBtn.addEventListener('click', () => {
-      if (!confirm('Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.')) return;
-
-      const loggedUser = localStorage.getItem('loggedUser');
-      const transaction = db.transaction(['usuarios'], 'readwrite');
-      const store = transaction.objectStore('usuarios');
-      const request = store.delete(loggedUser);
-
-      request.onsuccess = () => {
-        alert('Conta excluída com sucesso!');
-        localStorage.removeItem('loggedUser');
-        app.style.display = 'none';
-        loginForm.style.display = 'flex';
-        usernameInput.value = '';
-        passwordInput.value = '';
-        loginMsg.textContent = '';
-      };
-
-      request.onerror = () => alert('Erro ao excluir conta.');
-    });
-
     // ---------------- Service Worker ----------------
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
@@ -307,6 +321,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
