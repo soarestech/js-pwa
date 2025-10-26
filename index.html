@@ -34,8 +34,9 @@
 <!-- Login -->
 <div id="loginForm" class="screen">
   <h1>Login</h1>
-  <input type="text" id="username" placeholder="Usuário" autocomplete="off">
-  <input type="password" id="password" placeholder="Senha" autocomplete="off">
+<!-- Inputs de login atualizados -->
+<input type="text" id="username" placeholder="Usuário" autocomplete="off" name="user_fake">
+<input type="password" id="password" placeholder="Senha" autocomplete="off" name="pass_fake">
   <button id="btnLogin">Entrar</button>
   <p id="loginMsg"></p>
   <button id="btnGoRegister">Cadastrar novo usuário</button>
@@ -255,13 +256,26 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-logoutBtn.addEventListener('click', () => {
-  localStorage.removeItem('loggedUser');
-  usernameInput.value = '';
-  passwordInput.value = '';
-  loginMsg.textContent = '';
-  showScreen('login');
-});
+  logoutBtn.addEventListener('click', () => {
+    // Remove usuário logado
+    localStorage.removeItem('loggedUser');
+
+    // Limpa os campos de login e a mensagem
+    usernameInput.value = '';
+    passwordInput.value = '';
+    loginMsg.textContent = '';
+
+    // Mostra a tela de login
+    showScreen('login');
+
+    // Opcional: força o navegador a resetar autofill (funciona na maioria dos navegadores)
+    usernameInput.blur();
+    passwordInput.blur();
+    setTimeout(() => {
+      usernameInput.focus();
+      usernameInput.blur();
+    }, 50);
+  });
 
     // ---------------- Service Worker ----------------
 if ('serviceWorker' in navigator) {
@@ -288,6 +302,7 @@ if ('serviceWorker' in navigator) {
 </footer>
 </body>
 </html>
+
 
 
 
