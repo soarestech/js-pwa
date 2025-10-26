@@ -99,10 +99,20 @@
   <!-- Formulário Alterar Senha -->
   <div id="changePasswordForm" style="display:none;">
     <h1>Alterar senha</h1>
+    <input type="password" id="currentPassword" placeholder="Senha atual">
     <input type="password" id="newPassword" placeholder="Nova senha">
     <button id="btnChangePassword">Salvar</button>
     <p id="changePasswordMsg"></p>
-    <button id="btnCancelChangePassword">Cancelar</button>
+    <button id="btnBackToAppFromChange">Cancelar</button>
+  </div>
+
+  <!-- Formulário Excluir Usuário -->
+  <div id="deleteUserForm" style="display:none;">
+    <h1>Excluir Usuário</h1>
+    <p>Tem certeza que deseja excluir seu usuário? Esta ação não pode ser desfeita!</p>
+    <button id="btnConfirmDelete">Sim, excluir</button>
+    <button id="btnCancelDelete">Cancelar</button>
+    <p id="deleteUserMsg"></p>
   </div>
 
   <script>
@@ -111,6 +121,7 @@
     const registerForm = document.getElementById('registerForm');
     const app = document.getElementById('app');
     const changePasswordForm = document.getElementById('changePasswordForm');
+    const deleteUserForm = document.getElementById('deleteUserForm');
 
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
@@ -130,10 +141,15 @@
     const changePasswordBtn = document.getElementById('changePasswordBtn');
     const deleteUserBtn = document.getElementById('deleteUserBtn');
 
+    const currentPasswordInput = document.getElementById('currentPassword');
     const newPasswordInput = document.getElementById('newPassword');
     const btnChangePassword = document.getElementById('btnChangePassword');
     const changePasswordMsg = document.getElementById('changePasswordMsg');
-    const btnCancelChangePassword = document.getElementById('btnCancelChangePassword');
+    const btnBackToAppFromChange = document.getElementById('btnBackToAppFromChange');
+
+    const btnConfirmDelete = document.getElementById('btnConfirmDelete');
+    const btnCancelDelete = document.getElementById('btnCancelDelete');
+    const deleteUserMsg = document.getElementById('deleteUserMsg');
 
     const mensagem = document.getElementById('mensagem');
     const body = document.body;
@@ -168,18 +184,22 @@
       };
     }
 
-    function updatePassword(username, newPassword, callback) {
+    function updatePassword(username, currentPassword, newPassword, callback) {
       const transaction = db.transaction(['usuarios'], 'readwrite');
       const store = transaction.objectStore('usuarios');
       const getReq = store.get(username);
       getReq.onsuccess = () => {
         const user = getReq.result;
         if(user){
+          if(user.password !== currentPassword){
+            callback('current_wrong'); 
+            return;
+          }
           user.password = newPassword;
           const updateReq = store.put(user);
-          updateReq.onsuccess = () => callback(true);
-          updateReq.onerror = () => callback(false);
-        } else callback(false);
+          updateReq.onsuccess = () => callback('success');
+          updateReq.onerror = () => callback('error');
+        } else callback('notfound');
       };
     }
 
@@ -197,11 +217,13 @@
       registerForm.style.display = 'none';
       app.style.display = 'none';
       changePasswordForm.style.display = 'none';
+      deleteUserForm.style.display = 'none';
 
       if(screen === 'login') loginForm.style.display = 'flex';
       if(screen === 'register') registerForm.style.display = 'flex';
       if(screen === 'app') app.style.display = 'flex';
       if(screen === 'changePassword') changePasswordForm.style.display = 'flex';
+      if(screen === 'deleteUser') deleteUserForm.style.display = 'flex';
     }
 
     function showApp(user) {
@@ -281,38 +303,56 @@
 
     // ---------------- Alterar senha ----------------
     changePasswordBtn.addEventListener('click', () => {
-      changePasswordMsg.textContent = '';
+      currentPasswordInput.value = '';
       newPasswordInput.value = '';
+      changePasswordMsg.textContent = '';
       showScreen('changePassword');
     });
 
-    btnCancelChangePassword.addEventListener('click', () => showApp(localStorage.getItem('loggedUser')));
+    btnBackToAppFromChange.addEventListener('click', () => {
+      showApp(localStorage.getItem('loggedUser'));
+    });
 
     btnChangePassword.addEventListener('click', () => {
+      const currentPass = currentPasswordInput.value.trim();
       const newPass = newPasswordInput.value.trim();
-      if(!newPass){
-        changePasswordMsg.textContent = 'Digite a nova senha!';
+      if(!currentPass || !newPass){
+        changePasswordMsg.textContent = 'Preencha todos os campos!';
         return;
       }
       const user = localStorage.getItem('loggedUser');
-      updatePassword(user, newPass, (success) => {
-        changePasswordMsg.textContent = success ? 'Senha atualizada com sucesso!' : 'Erro ao atualizar senha.';
-        if(success) newPasswordInput.value = '';
+      updatePassword(user, currentPass, newPass, (status) => {
+        if(status === 'success'){
+          changePasswordMsg.textContent = 'Senha alterada com sucesso!';
+          currentPasswordInput.value = '';
+          newPasswordInput.value = '';
+        } else if(status === 'current_wrong'){
+          changePasswordMsg.textContent = 'Senha atual incorreta!';
+        } else {
+          changePasswordMsg.textContent = 'Erro ao atualizar senha.';
+        }
       });
     });
 
     // ---------------- Excluir usuário ----------------
     deleteUserBtn.addEventListener('click', () => {
+      deleteUserMsg.textContent = '';
+      showScreen('deleteUser');
+    });
+
+    btnConfirmDelete.addEventListener('click', () => {
       const user = localStorage.getItem('loggedUser');
-      if(confirm(`Tem certeza que deseja excluir o usuário "${user}"?`)){
-        deleteUser(user, (success) => {
-          if(success){
-            alert('Usuário excluído com sucesso!');
-            localStorage.removeItem('loggedUser');
-            showScreen('login');
-          } else alert('Erro ao excluir usuário.');
-        });
-      }
+      deleteUser(user, (success) => {
+        if(success){
+          deleteUserMsg.textContent = 'Usuário excluído com sucesso!';
+          localStorage.removeItem('loggedUser');
+          setTimeout(() => showScreen('login'), 1500);
+        } else deleteUserMsg.textContent = 'Erro ao excluir usuário.';
+      });
+    });
+
+    btnCancelDelete.addEventListener('click', () => {
+      showApp(localStorage.getItem('loggedUser'));
     });
 
     // ---------------- Service Worker ----------------
@@ -324,6 +364,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
