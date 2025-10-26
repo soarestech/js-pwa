@@ -32,7 +32,7 @@
       font-size: 16px;
     }
 
-    #app, #loginForm {
+    #app, #loginForm, #registerForm {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -73,6 +73,17 @@
     <input type="password" id="password" placeholder="Senha">
     <button id="btnLogin">Entrar</button>
     <p id="loginMsg"></p>
+    <button id="btnGoRegister">Cadastrar novo usuário</button>
+  </div>
+
+  <!-- Registro -->
+  <div id="registerForm" style="display:none;">
+    <h1>Cadastro</h1>
+    <input type="text" id="regUsername" placeholder="Novo usuário">
+    <input type="password" id="regPassword" placeholder="Nova senha">
+    <button id="btnRegister">Cadastrar</button>
+    <p id="registerMsg"></p>
+    <button id="btnGoLogin">Voltar ao login</button>
   </div>
 
   <!-- App principal -->
@@ -85,11 +96,19 @@
 
   <script>
     const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
     const app = document.getElementById('app');
     const btnLogin = document.getElementById('btnLogin');
     const loginMsg = document.getElementById('loginMsg');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
+    const btnGoRegister = document.getElementById('btnGoRegister');
+
+    const regUsernameInput = document.getElementById('regUsername');
+    const regPasswordInput = document.getElementById('regPassword');
+    const btnRegister = document.getElementById('btnRegister');
+    const registerMsg = document.getElementById('registerMsg');
+    const btnGoLogin = document.getElementById('btnGoLogin');
 
     const botao = document.getElementById('botao');
     const botaoTema = document.getElementById('tema');
@@ -97,13 +116,57 @@
     const mensagem = document.getElementById('mensagem');
     const body = document.body;
 
-    // Usuário "teste" / senha "123" (exemplo simples)
-    const USER = 'teste';
-    const PASS = '123';
+    // ---------------- IndexedDB ----------------
+    let db;
+    const request = indexedDB.open('MeuPWA', 1);
 
-    // ---------------- Login ----------------
+    request.onupgradeneeded = (event) => {
+      db = event.target.result;
+      if (!db.objectStoreNames.contains('usuarios')) {
+        const store = db.createObjectStore('usuarios', { keyPath: 'username' });
+        store.createIndex('username', 'username', { unique: true });
+      }
+    };
+
+    request.onsuccess = (event) => {
+      db = event.target.result;
+      console.log('✅ Banco IndexedDB aberto com sucesso');
+      checkLoggedUser();
+    };
+
+    request.onerror = (event) => {
+      console.error('❌ Erro ao abrir IndexedDB', event.target.error);
+    };
+
+    function salvarUsuario(username, password) {
+      const transaction = db.transaction(['usuarios'], 'readwrite');
+      const store = transaction.objectStore('usuarios');
+      const usuario = { username, password };
+      const request = store.add(usuario);
+
+      request.onsuccess = () => console.log('Usuário salvo com sucesso!');
+      request.onerror = () => console.error('Erro ao salvar usuário (talvez já exista)');
+    }
+
+    function verificarLogin(username, password, callback) {
+      const transaction = db.transaction(['usuarios'], 'readonly');
+      const store = transaction.objectStore('usuarios');
+      const request = store.get(username);
+
+      request.onsuccess = () => {
+        const user = request.result;
+        if (user && user.password === password) {
+          callback(true);
+        } else {
+          callback(false);
+        }
+      };
+    }
+
+    // ---------------- Login / Logout ----------------
     function showApp(user) {
       loginForm.style.display = 'none';
+      registerForm.style.display = 'none';
       app.style.display = 'flex';
       mensagem.textContent = `Olá, ${user}! 👋`;
     }
@@ -111,15 +174,17 @@
     btnLogin.addEventListener('click', () => {
       const user = usernameInput.value;
       const pass = passwordInput.value;
-      if(user === USER && pass === PASS){
-        localStorage.setItem('loggedUser', user);
-        showApp(user);
-      } else {
-        loginMsg.textContent = 'Usuário ou senha incorretos!';
-      }
+
+      verificarLogin(user, pass, (success) => {
+        if (success) {
+          localStorage.setItem('loggedUser', user);
+          showApp(user);
+        } else {
+          loginMsg.textContent = 'Usuário ou senha incorretos!';
+        }
+      });
     });
 
-    // Logout
     logoutBtn.addEventListener('click', () => {
       localStorage.removeItem('loggedUser');
       app.style.display = 'none';
@@ -129,11 +194,49 @@
       loginMsg.textContent = '';
     });
 
-    // Se já estiver logado
-    const loggedUser = localStorage.getItem('loggedUser');
-    if(loggedUser){
-      showApp(loggedUser);
+    function checkLoggedUser() {
+      const loggedUser = localStorage.getItem('loggedUser');
+      if (loggedUser) {
+        showApp(loggedUser);
+      }
     }
+
+    // ---------------- Cadastro ----------------
+    btnGoRegister.addEventListener('click', () => {
+      loginForm.style.display = 'none';
+      registerForm.style.display = 'flex';
+      registerMsg.textContent = '';
+    });
+
+    btnGoLogin.addEventListener('click', () => {
+      registerForm.style.display = 'none';
+      loginForm.style.display = 'flex';
+      loginMsg.textContent = '';
+    });
+
+    btnRegister.addEventListener('click', () => {
+      const user = regUsernameInput.value.trim();
+      const pass = regPasswordInput.value.trim();
+
+      if (!user || !pass) {
+        registerMsg.textContent = 'Preencha todos os campos!';
+        return;
+      }
+
+      const transaction = db.transaction(['usuarios'], 'readwrite');
+      const store = transaction.objectStore('usuarios');
+      const request = store.add({ username: user, password: pass });
+
+      request.onsuccess = () => {
+        registerMsg.textContent = 'Usuário cadastrado com sucesso!';
+        regUsernameInput.value = '';
+        regPasswordInput.value = '';
+      };
+
+      request.onerror = () => {
+        registerMsg.textContent = 'Erro: usuário já existe!';
+      };
+    });
 
     // ---------------- Mensagem ----------------
     botao.addEventListener('click', () => {
@@ -155,7 +258,6 @@
       }
     });
 
-    // Aplica tema armazenado
     const savedTheme = localStorage.getItem('theme');
     if(savedTheme){
       if(savedTheme === 'dark'){
@@ -178,6 +280,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
