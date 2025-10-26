@@ -253,29 +253,17 @@
   });
 
     // ---------------- Service Worker ----------------
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('service-worker.js')
-        .then(() => console.log('✅ Service Worker registrado com sucesso!'))
-        .catch(err => console.error('❌ Falha ao registrar o Service Worker:', err));
-    }
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => {
+      reg.unregister().then(() => console.log('❌ Service Worker antigo removido'));
+    });
+  }).finally(() => {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(() => console.log('✅ Novo Service Worker registrado e cache atualizado'))
+      .catch(err => console.error('❌ Falha ao registrar SW:', err));
+  });
+}
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
