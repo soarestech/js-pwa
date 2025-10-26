@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meu PWA JS Puro</title>
 
-  <!-- Ícone e Manifest -->
-  <link rel="manifest" href="js-pwa/manifest.json">
-  <link rel="icon" href="js-pwa/icon-192.png" type="image/png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png" type="image/png">
 
   <style>
     body {
@@ -23,171 +22,164 @@
       transition: background 0.3s, color 0.3s;
     }
 
-    h1 { color: inherit; text-align: center; }
+    h1, p {
+      text-align: center;
+    }
 
-    button, input {
+    input, button {
       margin-top: 10px;
-      padding: 10px 20px;
+      padding: 10px;
       font-size: 16px;
-      cursor: pointer;
     }
 
-    input { width: 200px; }
+    #app, #loginForm {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-    /* Dark/Light */
+    /* Modo dark */
     @media (prefers-color-scheme: dark) {
-      body { background: #1e1e1e; color: #f5f5f5; }
-      button, input { background: #333; color: #f5f5f5; border: none; }
+      body {
+        background: #1e1e1e;
+        color: #f5f5f5;
+      }
+      input, button {
+        background: #333;
+        color: #f5f5f5;
+        border: none;
+      }
     }
 
+    /* Modo light */
     @media (prefers-color-scheme: light) {
-      body { background: #f5f5f5; color: #333; }
-      button, input { background: #fff; color: #333; border: 1px solid #ccc; }
+      body {
+        background: #f5f5f5;
+        color: #333;
+      }
+      input, button {
+        background: #fff;
+        color: #333;
+        border: 1px solid #ccc;
+      }
     }
   </style>
 </head>
 <body>
-  <h1 id="mensagem">Olá, mundo! 👋</h1>
-  <button id="botao">Mudar mensagem</button>
-  <button id="tema">Alternar tema 🌙💡</button>
+  <!-- Login -->
+  <div id="loginForm">
+    <h1>Login</h1>
+    <input type="text" id="username" placeholder="Usuário">
+    <input type="password" id="password" placeholder="Senha">
+    <button id="btnLogin">Entrar</button>
+    <p id="loginMsg"></p>
+  </div>
 
-  <hr style="width:80%; margin:20px 0;">
-
-  <!-- Login Simples -->
-  <h2>Login Offline</h2>
-  <input type="email" id="email" placeholder="Email"><br>
-  <input type="password" id="senha" placeholder="Senha"><br>
-  <button id="cadastrar">Cadastrar</button>
-  <button id="login">Login</button>
-
-  <hr style="width:80%; margin:20px 0;">
-
-  <!-- Salvar Mensagens -->
-  <h2>Mensagens Offline</h2>
-  <input type="text" id="msg" placeholder="Digite uma mensagem"><br>
-  <button id="salvarMsg">Salvar Mensagem</button>
-  <button id="listarMsg">Listar Mensagens no Console</button>
+  <!-- App principal -->
+  <div id="app" style="display:none;">
+    <h1 id="mensagem">Olá, mundo! 👋</h1>
+    <button id="botao">Mudar mensagem</button>
+    <button id="tema">Alternar tema 🌙💡</button>
+    <button id="logout">Sair</button>
+  </div>
 
   <script>
+    const loginForm = document.getElementById('loginForm');
+    const app = document.getElementById('app');
+    const btnLogin = document.getElementById('btnLogin');
+    const loginMsg = document.getElementById('loginMsg');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+
     const botao = document.getElementById('botao');
     const botaoTema = document.getElementById('tema');
+    const logoutBtn = document.getElementById('logout');
     const mensagem = document.getElementById('mensagem');
     const body = document.body;
 
-    const emailInput = document.getElementById('email');
-    const senhaInput = document.getElementById('senha');
-    const btnCadastrar = document.getElementById('cadastrar');
-    const btnLogin = document.getElementById('login');
+    // Usuário "teste" / senha "123" (exemplo simples)
+    const USER = 'teste';
+    const PASS = '123';
 
-    const msgInput = document.getElementById('msg');
-    const btnSalvarMsg = document.getElementById('salvarMsg');
-    const btnListarMsg = document.getElementById('listarMsg');
+    // ---------------- Login ----------------
+    function showApp(user) {
+      loginForm.style.display = 'none';
+      app.style.display = 'flex';
+      mensagem.textContent = `Olá, ${user}! 👋`;
+    }
 
-    let db;
-
-    // ---------------- IndexedDB ----------------
-    const request = indexedDB.open('MeuPWA_DB', 1);
-
-    request.onupgradeneeded = event => {
-      db = event.target.result;
-      if (!db.objectStoreNames.contains('usuarios')) {
-        db.createObjectStore('usuarios', { keyPath: 'email' });
+    btnLogin.addEventListener('click', () => {
+      const user = usernameInput.value;
+      const pass = passwordInput.value;
+      if(user === USER && pass === PASS){
+        localStorage.setItem('loggedUser', user);
+        showApp(user);
+      } else {
+        loginMsg.textContent = 'Usuário ou senha incorretos!';
       }
-      if (!db.objectStoreNames.contains('mensagens')) {
-        db.createObjectStore('mensagens', { keyPath: 'id', autoIncrement: true });
-      }
-    };
+    });
 
-    request.onsuccess = event => {
-      db = event.target.result;
-      console.log('✅ IndexedDB pronta');
-    };
+    // Logout
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('loggedUser');
+      app.style.display = 'none';
+      loginForm.style.display = 'flex';
+      usernameInput.value = '';
+      passwordInput.value = '';
+      loginMsg.textContent = '';
+    });
 
-    request.onerror = event => console.error('❌ IndexedDB erro:', event.target.error);
+    // Se já estiver logado
+    const loggedUser = localStorage.getItem('loggedUser');
+    if(loggedUser){
+      showApp(loggedUser);
+    }
 
-    // ---------------- Botões ----------------
+    // ---------------- Mensagem ----------------
     botao.addEventListener('click', () => {
       mensagem.textContent = 'Você clicou no botão! 🚀';
     });
 
+    // ---------------- Tema ----------------
     botaoTema.addEventListener('click', () => {
       if (body.dataset.theme === 'dark') {
         body.dataset.theme = 'light';
         body.style.background = '#f5f5f5';
         body.style.color = '#333';
+        localStorage.setItem('theme', 'light');
       } else {
         body.dataset.theme = 'dark';
         body.style.background = '#1e1e1e';
         body.style.color = '#f5f5f5';
+        localStorage.setItem('theme', 'dark');
       }
     });
 
-    // ---------------- Login Simples ----------------
-    btnCadastrar.addEventListener('click', () => {
-      const email = emailInput.value.trim();
-      const senha = senhaInput.value.trim();
-      if (!email || !senha) return alert('Preencha email e senha');
-      const tx = db.transaction('usuarios', 'readwrite');
-      const store = tx.objectStore('usuarios');
-      store.add({ email, senha });
-      tx.oncomplete = () => alert('✅ Usuário cadastrado!');
-      tx.onerror = () => alert('❌ Usuário já existe');
-    });
+    // Aplica tema armazenado
+    const savedTheme = localStorage.getItem('theme');
+    if(savedTheme){
+      if(savedTheme === 'dark'){
+        body.dataset.theme = 'dark';
+        body.style.background = '#1e1e1e';
+        body.style.color = '#f5f5f5';
+      } else {
+        body.dataset.theme = 'light';
+        body.style.background = '#f5f5f5';
+        body.style.color = '#333';
+      }
+    }
 
-    btnLogin.addEventListener('click', () => {
-      const email = emailInput.value.trim();
-      const senha = senhaInput.value.trim();
-      const tx = db.transaction('usuarios', 'readonly');
-      const store = tx.objectStore('usuarios');
-      const req = store.get(email);
-      req.onsuccess = () => {
-        if (req.result && req.result.senha === senha) {
-          alert('✅ Login ok!');
-        } else {
-          alert('❌ Login falhou');
-        }
-      };
-    });
-
-    // ---------------- Mensagens Offline ----------------
-    btnSalvarMsg.addEventListener('click', () => {
-      const texto = msgInput.value.trim();
-      if (!texto) return alert('Digite uma mensagem');
-      const tx = db.transaction('mensagens', 'readwrite');
-      const store = tx.objectStore('mensagens');
-      store.add({ texto, data: new Date() });
-      tx.oncomplete = () => {
-        alert('✅ Mensagem salva!');
-        msgInput.value = '';
-      };
-    });
-
-    btnListarMsg.addEventListener('click', () => {
-      const tx = db.transaction('mensagens', 'readonly');
-      const store = tx.objectStore('mensagens');
-      const req = store.getAll();
-      req.onsuccess = () => console.log('Mensagens:', req.result);
-    });
-
-    // ---------------- Service Worker + Atualização ----------------
+    // ---------------- Service Worker ----------------
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('js-pwa/service-worker.js')
-        .then(reg => {
-          console.log('✅ Service Worker registrado');
-          reg.onupdatefound = () => {
-            const newWorker = reg.installing;
-            newWorker.onstatechange = () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                alert('🆕 Nova versão disponível! Atualize a página.');
-              }
-            };
-          };
-        })
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('✅ Service Worker registrado com sucesso!'))
         .catch(err => console.error('❌ Falha ao registrar o Service Worker:', err));
     }
   </script>
 </body>
 </html>
+
+
 
 
 
