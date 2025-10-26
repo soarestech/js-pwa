@@ -38,6 +38,11 @@ self.addEventListener('activate', event => {
 
 // 🔹 Intercepta requisições: serve cache ou busca online
 self.addEventListener('fetch', event => {
+  const requestURL = new URL(event.request.url);
+
+  // Apenas interceptar recursos dentro do PWA
+  if (!requestURL.pathname.startsWith('/js-pwa/')) return;
+
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -59,6 +64,8 @@ self.addEventListener('fetch', event => {
       })
   );
 });
+
+
 
 
 
