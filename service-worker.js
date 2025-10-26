@@ -1,50 +1,65 @@
-const CACHE_NAME = 'js-pwa-v1'; // Atualize a versão quando mudar algo
-const FILES_TO_CACHE = [
-  'index.html',
-  'manifest.json',
-  'icon-192.png',
-  'icon-512.png'
+// Nome base do cache e versão automática
+const CACHE_BASE = 'js-pwa-cache';
+const CACHE_VERSION = Date.now(); // timestamp único a cada deploy
+const CACHE_NAME = `${CACHE_BASE}-${CACHE_VERSION}`;
+
+// Lista de arquivos essenciais a cachear
+const URLS_TO_CACHE = [
+  '/js-pwa/index.html',
+  '/js-pwa/manifest.json',
+  '/js-pwa/icon-192.png',
+  '/js-pwa/icon-512.png'
 ];
 
-// Instalando o Service Worker e cacheando arquivos
-self.addEventListener('install', (event) => {
-  console.log('[ServiceWorker] Instalando...');
+// 🔹 Instalação: cache inicial
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[ServiceWorker] Cacheando arquivos...');
-      return cache.addAll(FILES_TO_CACHE);
-    })
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('📦 Cache adicionado com sucesso:', CACHE_NAME);
+        return cache.addAll(URLS_TO_CACHE);
+      })
   );
-  self.skipWaiting(); // força o SW a ativar imediatamente
+  self.skipWaiting(); // ativa imediatamente
 });
 
-// Ativando o Service Worker e limpando caches antigos
-self.addEventListener('activate', (event) => {
-  console.log('[ServiceWorker] Ativando...');
+// 🔹 Ativação: remove caches antigos automaticamente
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('[ServiceWorker] Limpando cache antigo:', key);
-            return caches.delete(key);
-          }
-        })
-      );
-    })
+    caches.keys().then(keys =>
+      Promise.all(
+        keys.filter(key => !key.startsWith(CACHE_BASE + '-')) // mantém só o atual
+            .map(key => caches.delete(key))
+      )
+    )
   );
-  self.clients.claim(); // controla imediatamente todas as abas abertas
+  self.clients.claim(); // controla imediatamente todas as páginas
 });
 
-// Interceptando requisições e servindo do cache
-self.addEventListener('fetch', (event) => {
+// 🔹 Intercepta requisições: serve cache ou busca online
+self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
-      .then((response) => {
-        return response || fetch(event.request);
+      .then(response => {
+        if (response) return response; // retorna do cache se existir
+        return fetch(event.request)
+          .then(fetchResponse => {
+            // Atualiza cache com resposta nova
+            return caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, fetchResponse.clone());
+              return fetchResponse;
+            });
+          })
+          .catch(() => {
+            // Fallback offline simples
+            if (event.request.destination === 'document') {
+              return caches.match('/js-pwa/index.html');
+            }
+          });
       })
   );
 });
+
 
 
 
