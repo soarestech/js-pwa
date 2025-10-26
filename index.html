@@ -71,6 +71,11 @@
 </div>
 
 <script>
+  // ---------------- Versão do App ----------------
+const appVersion = '1.0.1'; // ✅ ALTERE AQUI sempre que atualizar algo
+document.getElementById('appVersion').textContent = `Versão: ${appVersion}`;
+console.log(`🔹 PWA carregando versão ${appVersion}`);
+  
   // ---------------- Elementos ----------------
   const loginForm = document.getElementById('loginForm');
   const registerForm = document.getElementById('registerForm');
@@ -265,5 +270,9 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<p id="appVersion" style="position:fixed; bottom:10px; font-size:14px; opacity:0.6;">
+  Versão: 1.0.0
+</p>
 </body>
 </html>
+
