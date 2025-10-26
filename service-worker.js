@@ -1,4 +1,4 @@
-const CACHE_NAME = 'meu-pwa-cache-v1';
+const CACHE_NAME = 'js-pwa-cache-v1';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
@@ -30,3 +30,4 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
