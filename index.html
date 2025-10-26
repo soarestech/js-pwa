@@ -73,7 +73,11 @@
 <script>
 // ---------------- Versão do App ----------------
 const appVersion = '1.0.1'; // altere a cada atualização
-document.getElementById('appVersion').textContent = `Versão: ${appVersion}`;
+
+window.addEventListener('DOMContentLoaded', () => {
+  const versionEl = document.getElementById('appVersion');
+  if (versionEl) versionEl.textContent = `Versão: ${appVersion}`;
+});
   
   // ---------------- Elementos ----------------
   const loginForm = document.getElementById('loginForm');
@@ -281,6 +285,7 @@ if ('serviceWorker' in navigator) {
 </footer>
 </body>
 </html>
+
 
 
 
