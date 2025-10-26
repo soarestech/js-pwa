@@ -6,8 +6,8 @@
   <title>Meu PWA JS Puro</title>
 
   <!-- Ícone e Manifest -->
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon-192.png" type="image/png">
+  <link rel="manifest" href="js-pwa/manifest.json">
+  <link rel="icon" href="js-pwa/icon-192.png" type="image/png">
 
   <style>
     body {
@@ -91,13 +91,14 @@
       }
     });
 
-    // 🔹 Registrar o Service Worker
+    // 🔹 Registrar o Service Worker (pasta js-pwa)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
+      navigator.serviceWorker.register('js-pwa/service-worker.js')
         .then(() => console.log('✅ Service Worker registrado com sucesso!'))
         .catch(err => console.error('❌ Falha ao registrar o Service Worker:', err));
     }
   </script>
 </body>
 </html>
+
 
