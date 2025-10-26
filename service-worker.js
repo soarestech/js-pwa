@@ -1,9 +1,7 @@
-// Nome base do cache e versão automática
-const CACHE_BASE = 'js-pwa-cache';
-const CACHE_VERSION = Date.now(); // timestamp único a cada deploy
-const CACHE_NAME = `${CACHE_BASE}-${CACHE_VERSION}`;
+// 🔹 Nome do cache e versão manual (aumente quando fizer deploy)
+const CACHE_NAME = 'js-pwa-cache-v2';
 
-// Lista de arquivos essenciais a cachear
+// 🔹 Arquivos essenciais a cachear
 const URLS_TO_CACHE = [
   '/js-pwa/index.html',
   '/js-pwa/manifest.json',
@@ -11,63 +9,67 @@ const URLS_TO_CACHE = [
   '/js-pwa/icon-512.png'
 ];
 
-// 🔹 Instalação: cache inicial
+// ---------------- Install: cache inicial ----------------
 self.addEventListener('install', event => {
+  console.log('🔹 Service Worker: Instalando e cacheando arquivos...');
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('📦 Cache adicionado com sucesso:', CACHE_NAME);
-        return cache.addAll(URLS_TO_CACHE);
-      })
+      .then(cache => cache.addAll(URLS_TO_CACHE))
   );
   self.skipWaiting(); // ativa imediatamente
 });
 
-// 🔹 Ativação: remove caches antigos automaticamente
+// ---------------- Activate: remove caches antigos ----------------
 self.addEventListener('activate', event => {
+  console.log('🔹 Service Worker: Ativando e limpando caches antigos...');
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys.filter(key => !key.startsWith(CACHE_BASE + '-')) // mantém só o atual
-            .map(key => caches.delete(key))
+        keys
+          .filter(key => key !== CACHE_NAME) // remove caches que não são a versão atual
+          .map(key => caches.delete(key))
       )
     )
   );
-  self.clients.claim(); // controla imediatamente todas as páginas
+  self.clients.claim(); // assume controle imediatamente
 });
 
-// 🔹 Intercepta requisições: serve cache ou busca online
+// ---------------- Fetch: intercepta requisições ----------------
 self.addEventListener('fetch', event => {
   const requestURL = new URL(event.request.url);
 
-  // Apenas interceptar recursos dentro do PWA
+  // Intercepta apenas requisições dentro do PWA
   if (!requestURL.pathname.startsWith('/js-pwa/')) return;
 
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) return response; // retorna do cache se existir
-        return fetch(event.request)
-          .then(fetchResponse => {
-            // Atualiza cache com resposta nova
-            return caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, fetchResponse.clone());
-              return fetchResponse;
-            });
-          })
-          .catch(() => {
-            // Fallback offline simples
-            if (event.request.destination === 'document') {
-              return caches.match('/js-pwa/index.html');
-            }
+  // Estratégia: Network first para HTML, Cache first para outros assets
+  if (requestURL.pathname.endsWith('index.html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // Atualiza cache com a versão nova
+          return caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, response.clone());
+            return response;
           });
-      })
-  );
+        })
+        .catch(() => caches.match(event.request))
+    );
+  } else {
+    event.respondWith(
+      caches.match(event.request)
+        .then(response => response || fetch(event.request).then(fetchResponse => {
+          // Atualiza cache com a resposta nova
+          return caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, fetchResponse.clone());
+            return fetchResponse;
+          });
+        }))
+        .catch(() => {
+          // fallback simples offline
+          if (event.request.destination === 'document') {
+            return caches.match('/js-pwa/index.html');
+          }
+        })
+    );
+  }
 });
-
-
-
-
-
-
-
