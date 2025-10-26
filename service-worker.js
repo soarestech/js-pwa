@@ -1,33 +1,50 @@
-const CACHE_NAME = 'js-pwa-cache-v1';
-const URLS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+const CACHE_NAME = 'js-pwa-v1'; // Atualize a versão quando mudar algo
+const FILES_TO_CACHE = [
+  'index.html',
+  'manifest.json',
+  'icon-192.png',
+  'icon-512.png'
 ];
 
-// Instala o service worker e armazena os arquivos
-self.addEventListener('install', event => {
+// Instalando o Service Worker e cacheando arquivos
+self.addEventListener('install', (event) => {
+  console.log('[ServiceWorker] Instalando...');
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      console.log('📦 Arquivos armazenados no cache!');
-      return cache.addAll(URLS_TO_CACHE);
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[ServiceWorker] Cacheando arquivos...');
+      return cache.addAll(FILES_TO_CACHE);
     })
   );
+  self.skipWaiting(); // força o SW a ativar imediatamente
 });
 
-// Ativa o service worker
-self.addEventListener('activate', event => {
-  console.log('✅ Service Worker ativado!');
+// Ativando o Service Worker e limpando caches antigos
+self.addEventListener('activate', (event) => {
+  console.log('[ServiceWorker] Ativando...');
+  event.waitUntil(
+    caches.keys().then((keyList) => {
+      return Promise.all(
+        keyList.map((key) => {
+          if (key !== CACHE_NAME) {
+            console.log('[ServiceWorker] Limpando cache antigo:', key);
+            return caches.delete(key);
+          }
+        })
+      );
+    })
+  );
+  self.clients.claim(); // controla imediatamente todas as abas abertas
 });
 
-// Intercepta requisições e usa o cache offline
-self.addEventListener('fetch', event => {
+// Interceptando requisições e servindo do cache
+self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
-    })
+    caches.match(event.request)
+      .then((response) => {
+        return response || fetch(event.request);
+      })
   );
 });
+
+
 
