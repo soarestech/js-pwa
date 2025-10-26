@@ -19,28 +19,76 @@
       align-items: center;
       height: 100vh;
       background: #f5f5f5;
-    }
-    h1 {
       color: #333;
+      transition: background 0.3s, color 0.3s;
     }
+
+    h1 {
+      color: inherit;
+      text-align: center;
+    }
+
     button {
       margin-top: 20px;
       padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
     }
+
+    /* Modo dark */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #1e1e1e;
+        color: #f5f5f5;
+      }
+      button {
+        background: #333;
+        color: #f5f5f5;
+        border: none;
+      }
+    }
+
+    /* Modo light */
+    @media (prefers-color-scheme: light) {
+      body {
+        background: #f5f5f5;
+        color: #333;
+      }
+      button {
+        background: #fff;
+        color: #333;
+        border: 1px solid #ccc;
+      }
+    }
   </style>
 </head>
 <body>
   <h1 id="mensagem">Olá, mundo! 👋</h1>
   <button id="botao">Mudar mensagem</button>
+  <button id="tema">Alternar tema 🌙💡</button>
 
   <script>
     const botao = document.getElementById('botao');
+    const botaoTema = document.getElementById('tema');
     const mensagem = document.getElementById('mensagem');
+    const body = document.body;
 
+    // Botão muda a mensagem
     botao.addEventListener('click', () => {
       mensagem.textContent = 'Você clicou no botão! 🚀';
+    });
+
+    // Botão alterna entre dark/light
+    botaoTema.addEventListener('click', () => {
+      if (body.dataset.theme === 'dark') {
+        body.dataset.theme = 'light';
+        body.style.background = '#f5f5f5';
+        body.style.color = '#333';
+      } else {
+        body.dataset.theme = 'dark';
+        body.style.background = '#1e1e1e';
+        body.style.color = '#f5f5f5';
+      }
     });
 
     // 🔹 Registrar o Service Worker
@@ -52,3 +100,4 @@
   </script>
 </body>
 </html>
+
