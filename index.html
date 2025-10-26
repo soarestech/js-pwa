@@ -255,10 +255,13 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  logoutBtn.addEventListener('click', ()=>{
-    localStorage.removeItem('loggedUser');
-    showScreen('login');
-  });
+logoutBtn.addEventListener('click', () => {
+  localStorage.removeItem('loggedUser');
+  usernameInput.value = '';
+  passwordInput.value = '';
+  loginMsg.textContent = '';
+  showScreen('login');
+});
 
     // ---------------- Service Worker ----------------
 if ('serviceWorker' in navigator) {
@@ -285,6 +288,7 @@ if ('serviceWorker' in navigator) {
 </footer>
 </body>
 </html>
+
 
 
 
