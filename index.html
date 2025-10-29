@@ -342,9 +342,10 @@ if ('serviceWorker' in navigator) {
 }
 
 // Atualiza a versão mostrada no rodapé
-const footerVersion = document.querySelector('footer p');
+// Atualiza versão no footer
+const footerVersion = document.getElementById('appVersion');
 if (footerVersion) {
-  footerVersion.textContent = `Versão ${appVersion}`;
+  footerVersion.textContent = `Versão: ${appVersion}`;
 }
 </script>
 
@@ -360,6 +361,7 @@ if (footerVersion) {
 </footer>
 </body>
 </html>
+
 
 
 
