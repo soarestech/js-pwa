@@ -342,10 +342,9 @@ if ('serviceWorker' in navigator) {
 }
 
 // Atualiza a versão mostrada no rodapé
-// Atualiza versão no footer
-const footerVersion = document.getElementById('appVersion');
+const footerVersion = document.querySelector('footer p');
 if (footerVersion) {
-  footerVersion.textContent = `Versão: ${appVersion}`;
+  footerVersion.textContent = `Versão ${appVersion}`;
 }
 </script>
 
@@ -357,10 +356,11 @@ if (footerVersion) {
   color: #777;
   opacity: 0.7;
 ">
-  Versão: 1.0.1
+  <p></p>
 </footer>
 </body>
 </html>
+
 
 
 
