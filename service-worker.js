@@ -1,5 +1,5 @@
 // 🔹 Nome do cache e versão manual (aumente quando fizer deploy)
-const CACHE_VERSION = '1.0.1'; // mesma versão do index.html
+const CACHE_VERSION = '1.0.2'; // mesma versão do index.html
 const CACHE_NAME = `js-pwa-cache-${CACHE_VERSION}`;
 
 // 🔹 Arquivos essenciais a cachear
@@ -74,4 +74,5 @@ self.addEventListener('fetch', event => {
     );
   }
 });
+
 
