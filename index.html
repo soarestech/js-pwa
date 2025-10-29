@@ -340,6 +340,12 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.error('❌ Falha ao registrar SW:', err));
   });
 }
+
+// Atualiza a versão mostrada no rodapé
+const footerVersion = document.querySelector('footer p');
+if (footerVersion) {
+  footerVersion.textContent = `Versão ${appVersion}`;
+}
 </script>
 
 <footer id="appVersion" style="
@@ -354,6 +360,7 @@ if ('serviceWorker' in navigator) {
 </footer>
 </body>
 </html>
+
 
 
 
