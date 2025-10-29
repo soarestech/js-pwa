@@ -34,9 +34,8 @@
 <!-- Login -->
 <div id="loginForm" class="screen">
   <h1>Login</h1>
-<!-- Inputs de login atualizados -->
-<input type="text" id="username" placeholder="Usuário" autocomplete="off" name="user_fake">
-<input type="password" id="password" placeholder="Senha" autocomplete="off" name="pass_fake">
+  <input type="text" id="username" placeholder="Usuário" autocomplete="off" name="user_fake">
+  <input type="password" id="password" placeholder="Senha" autocomplete="off" name="pass_fake">
   <button id="btnLogin">Entrar</button>
   <p id="loginMsg"></p>
   <button id="btnGoRegister">Cadastrar novo usuário</button>
@@ -88,192 +87,206 @@ window.addEventListener('DOMContentLoaded', () => {
   if (versionEl) versionEl.textContent = `Versão: ${appVersion}`;
 });
   
-  // ---------------- Elementos ----------------
-  const loginForm = document.getElementById('loginForm');
-  const registerForm = document.getElementById('registerForm');
-  const app = document.getElementById('app');
-  const changePasswordForm = document.getElementById('changePasswordForm');
-  
-  const userListScreen = document.getElementById('userListScreen');
-  const userList = document.getElementById('userList');
-  const btnBackToApp = document.getElementById('btnBackToApp');
-  const showUsersBtn = document.getElementById('showUsersBtn');
+// ---------------- Elementos ----------------
+const loginForm = document.getElementById('loginForm');
+const registerForm = document.getElementById('registerForm');
+const app = document.getElementById('app');
+const changePasswordForm = document.getElementById('changePasswordForm');
+const userListScreen = document.getElementById('userListScreen');
+const userList = document.getElementById('userList');
+const btnBackToApp = document.getElementById('btnBackToApp');
+const showUsersBtn = document.getElementById('showUsersBtn');
 
-  const usernameInput = document.getElementById('username');
-  const passwordInput = document.getElementById('password');
-  const btnLogin = document.getElementById('btnLogin');
-  const loginMsg = document.getElementById('loginMsg');
-  const btnGoRegister = document.getElementById('btnGoRegister');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
+const btnLogin = document.getElementById('btnLogin');
+const loginMsg = document.getElementById('loginMsg');
+const btnGoRegister = document.getElementById('btnGoRegister');
 
-  const regUsernameInput = document.getElementById('regUsername');
-  const regPasswordInput = document.getElementById('regPassword');
-  const btnRegister = document.getElementById('btnRegister');
-  const registerMsg = document.getElementById('registerMsg');
-  const btnGoLogin = document.getElementById('btnGoLogin');
+const regUsernameInput = document.getElementById('regUsername');
+const regPasswordInput = document.getElementById('regPassword');
+const btnRegister = document.getElementById('btnRegister');
+const registerMsg = document.getElementById('registerMsg');
+const btnGoLogin = document.getElementById('btnGoLogin');
 
-  const botao = document.getElementById('botao');
-  const botaoTema = document.getElementById('tema');
-  const logoutBtn = document.getElementById('logout');
-  const changePasswordBtn = document.getElementById('changePasswordBtn');
-  const deleteUserBtn = document.getElementById('deleteUserBtn');
+const botao = document.getElementById('botao');
+const botaoTema = document.getElementById('tema');
+const logoutBtn = document.getElementById('logout');
+const changePasswordBtn = document.getElementById('changePasswordBtn');
+const deleteUserBtn = document.getElementById('deleteUserBtn');
 
-  const newPasswordInput = document.getElementById('newPassword');
-  const btnChangePassword = document.getElementById('btnChangePassword');
-  const changePasswordMsg = document.getElementById('changePasswordMsg');
-  const btnCancelChangePassword = document.getElementById('btnCancelChangePassword');
+const newPasswordInput = document.getElementById('newPassword');
+const btnChangePassword = document.getElementById('btnChangePassword');
+const changePasswordMsg = document.getElementById('changePasswordMsg');
+const btnCancelChangePassword = document.getElementById('btnCancelChangePassword');
 
-  const mensagem = document.getElementById('mensagem');
-  const body = document.body;
+const mensagem = document.getElementById('mensagem');
+const body = document.body;
 
-  let db;
+let db;
 
-  // ---------------- IndexedDB ----------------
-  const request = indexedDB.open('MeuPWA', 1);
-  request.onupgradeneeded = (event) => {
-    db = event.target.result;
-    if (!db.objectStoreNames.contains('usuarios')) {
-      const store = db.createObjectStore('usuarios', { keyPath: 'username' });
-      store.createIndex('username', 'username', { unique: true });
-    }
+// ---------------- IndexedDB ----------------
+const request = indexedDB.open('MeuPWA', 1);
+request.onupgradeneeded = (event) => {
+  db = event.target.result;
+  if (!db.objectStoreNames.contains('usuarios')) {
+    const store = db.createObjectStore('usuarios', { keyPath: 'username' });
+    store.createIndex('username', 'username', { unique: true });
+  }
+};
+
+request.onsuccess = (event) => {
+  db = event.target.result;
+  console.log('✅ Banco IndexedDB aberto');
+  checkLoggedUser();
+};
+request.onerror = (event) => console.error('❌ Erro ao abrir IndexedDB', event.target.error);
+
+// ---------------- Funções ----------------
+function showScreen(screen){
+  loginForm.style.display = 'none';
+  registerForm.style.display = 'none';
+  app.style.display = 'none';
+  changePasswordForm.style.display = 'none';
+  userListScreen.style.display = 'none';
+
+  if(screen==='login') loginForm.style.display='flex';
+  if(screen==='register') registerForm.style.display='flex';
+  if(screen==='app') app.style.display='flex';
+  if(screen==='changePassword') changePasswordForm.style.display='flex';
+  if(screen==='userList') userListScreen.style.display='flex';
+}
+
+function showApp(user){
+  mensagem.textContent = `Olá, ${user}! 👋`;
+  showScreen('app');
+}
+
+function verificarLogin(username, password, callback){
+  const tx = db.transaction(['usuarios'],'readonly');
+  const store = tx.objectStore('usuarios');
+  const req = store.get(username);
+  req.onsuccess = () => callback(req.result && req.result.password === password);
+}
+
+function updatePassword(username, newPassword, callback){
+  const tx = db.transaction(['usuarios'],'readwrite');
+  const store = tx.objectStore('usuarios');
+  const req = store.get(username);
+  req.onsuccess = () => {
+    const user = req.result;
+    if(user){
+      user.password = newPassword;
+      const upd = store.put(user);
+      upd.onsuccess = () => callback(true);
+      upd.onerror = () => callback(false);
+    } else callback(false);
+  }
+}
+
+function deleteUser(username, callback){
+  const tx = db.transaction(['usuarios'],'readwrite');
+  const store = tx.objectStore('usuarios');
+  const req = store.delete(username);
+  req.onsuccess = () => callback(true);
+  req.onerror = () => callback(false);
+}
+
+function checkLoggedUser(){
+  const user = localStorage.getItem('loggedUser');
+  if(user) showApp(user);
+  else showScreen('login');
+}
+
+// ---------------- Eventos ----------------
+btnLogin.addEventListener('click', ()=>{
+  const user = usernameInput.value;
+  const pass = passwordInput.value;
+  verificarLogin(user, pass, success=>{
+    if(success){
+      localStorage.setItem('loggedUser', user);
+      showApp(user);
+    } else loginMsg.textContent='Usuário ou senha incorretos!';
+  });
+});
+
+btnGoRegister.addEventListener('click', ()=>showScreen('register'));
+btnGoLogin.addEventListener('click', ()=>showScreen('login'));
+
+btnRegister.addEventListener('click', ()=>{
+  const user = regUsernameInput.value.trim();
+  const pass = regPasswordInput.value.trim();
+  if(!user || !pass){ registerMsg.textContent='Preencha todos os campos!'; return; }
+  const tx = db.transaction(['usuarios'],'readwrite');
+  const store = tx.objectStore('usuarios');
+  const req = store.add({username:user,password:pass});
+  req.onsuccess = ()=>{
+    registerMsg.textContent='Usuário cadastrado!';
+    regUsernameInput.value='';
+    regPasswordInput.value='';
   };
+  req.onerror = ()=>registerMsg.textContent='Erro: usuário já existe!';
+});
 
-  request.onsuccess = (event) => {
-    db = event.target.result;
-    console.log('✅ Banco IndexedDB aberto');
-    checkLoggedUser();
-  };
-  request.onerror = (event) => console.error('❌ Erro ao abrir IndexedDB', event.target.error);
+botao.addEventListener('click', ()=>mensagem.textContent='Você clicou no botão! 🚀');
 
-  // ---------------- Funções ----------------
-  function showScreen(screen){
-    loginForm.style.display = 'none';
-    registerForm.style.display = 'none';
-    app.style.display = 'none';
-    changePasswordForm.style.display = 'none';
-	userListScreen.style.display = 'none';
-    if(screen==='login') loginForm.style.display='flex';
-    if(screen==='register') registerForm.style.display='flex';
-    if(screen==='app') app.style.display='flex';
-    if(screen==='changePassword') changePasswordForm.style.display='flex';
-	if(screen==='userList') userListScreen.style.display='flex';
-  }
+botaoTema.addEventListener('click', ()=>{
+  const newTheme = body.dataset.theme==='dark'?'light':'dark';
+  body.dataset.theme = newTheme;
+  localStorage.setItem('theme', newTheme);
+});
 
-  function showApp(user){
-    mensagem.textContent = `Olá, ${user}! 👋`;
-    showScreen('app');
-  }
+const savedTheme = localStorage.getItem('theme');
+if(savedTheme) body.dataset.theme=savedTheme;
 
-  function verificarLogin(username, password, callback){
-    const tx = db.transaction(['usuarios'],'readonly');
-    const store = tx.objectStore('usuarios');
-    const req = store.get(username);
-    req.onsuccess = () => callback(req.result && req.result.password === password);
-  }
+changePasswordBtn.addEventListener('click', ()=>{
+  changePasswordMsg.textContent='';
+  newPasswordInput.value='';
+  showScreen('changePassword');
+});
 
-  function updatePassword(username, newPassword, callback){
-    const tx = db.transaction(['usuarios'],'readwrite');
-    const store = tx.objectStore('usuarios');
-    const req = store.get(username);
-    req.onsuccess = () => {
-      const user = req.result;
-      if(user){
-        user.password = newPassword;
-        const upd = store.put(user);
-        upd.onsuccess = () => callback(true);
-        upd.onerror = () => callback(false);
-      } else callback(false);
-    }
-  }
+btnCancelChangePassword.addEventListener('click', ()=>showApp(localStorage.getItem('loggedUser')));
 
-  function deleteUser(username, callback){
-    const tx = db.transaction(['usuarios'],'readwrite');
-    const store = tx.objectStore('usuarios');
-    const req = store.delete(username);
-    req.onsuccess = () => callback(true);
-    req.onerror = () => callback(false);
-  }
+btnChangePassword.addEventListener('click', ()=>{
+  const newPass = newPasswordInput.value.trim();
+  if(!newPass){ changePasswordMsg.textContent='Digite a nova senha!'; return; }
+  const user = localStorage.getItem('loggedUser');
+  updatePassword(user,newPass,success=>{
+    changePasswordMsg.textContent = success?'Senha atualizada!':'Erro ao atualizar';
+    if(success) newPasswordInput.value='';
+  });
+});
 
-  function checkLoggedUser(){
-    const user = localStorage.getItem('loggedUser');
-    if(user) showApp(user);
-    else showScreen('login');
-  }
-
-  // ---------------- Eventos ----------------
-  btnLogin.addEventListener('click', ()=>{
-    const user = usernameInput.value;
-    const pass = passwordInput.value;
-    verificarLogin(user, pass, success=>{
+deleteUserBtn.addEventListener('click', ()=>{
+  const user = localStorage.getItem('loggedUser');
+  if(confirm(`Tem certeza que deseja excluir o usuário "${user}"?`)){
+    deleteUser(user,success=>{
       if(success){
-        localStorage.setItem('loggedUser', user);
-        showApp(user);
-      } else loginMsg.textContent='Usuário ou senha incorretos!';
+        alert('Usuário excluído!');
+        localStorage.removeItem('loggedUser');
+        showScreen('login');
+      } else alert('Erro ao excluir usuário.');
     });
-  });
+  }
+});
 
-  btnGoRegister.addEventListener('click', ()=>showScreen('register'));
-  btnGoLogin.addEventListener('click', ()=>showScreen('login'));
+logoutBtn.addEventListener('click', () => {
+  localStorage.removeItem('loggedUser');
+  usernameInput.value = '';
+  passwordInput.value = '';
+  loginMsg.textContent = '';
+  showScreen('login');
+  usernameInput.blur();
+  passwordInput.blur();
+  setTimeout(() => {
+    usernameInput.focus();
+    usernameInput.blur();
+  }, 50);
+});
 
-  btnRegister.addEventListener('click', ()=>{
-    const user = regUsernameInput.value.trim();
-    const pass = regPasswordInput.value.trim();
-    if(!user || !pass){ registerMsg.textContent='Preencha todos os campos!'; return; }
-    const tx = db.transaction(['usuarios'],'readwrite');
-    const store = tx.objectStore('usuarios');
-    const req = store.add({username:user,password:pass});
-    req.onsuccess = ()=>{
-      registerMsg.textContent='Usuário cadastrado!';
-      regUsernameInput.value='';
-      regPasswordInput.value='';
-    };
-    req.onerror = ()=>registerMsg.textContent='Erro: usuário já existe!';
-  });
-
-  botao.addEventListener('click', ()=>mensagem.textContent='Você clicou no botão! 🚀');
-
-  botaoTema.addEventListener('click', ()=>{
-    const newTheme = body.dataset.theme==='dark'?'light':'dark';
-    body.dataset.theme = newTheme;
-    localStorage.setItem('theme', newTheme);
-  });
-
-  const savedTheme = localStorage.getItem('theme');
-  if(savedTheme) body.dataset.theme=savedTheme;
-
-  changePasswordBtn.addEventListener('click', ()=>{
-    changePasswordMsg.textContent='';
-    newPasswordInput.value='';
-    showScreen('changePassword');
-  });
-
-  btnCancelChangePassword.addEventListener('click', ()=>showApp(localStorage.getItem('loggedUser')));
-
-  btnChangePassword.addEventListener('click', ()=>{
-    const newPass = newPasswordInput.value.trim();
-    if(!newPass){ changePasswordMsg.textContent='Digite a nova senha!'; return; }
-    const user = localStorage.getItem('loggedUser');
-    updatePassword(user,newPass,success=>{
-      changePasswordMsg.textContent = success?'Senha atualizada!':'Erro ao atualizar';
-      if(success) newPasswordInput.value='';
-    });
-  });
-
-  deleteUserBtn.addEventListener('click', ()=>{
-    const user = localStorage.getItem('loggedUser');
-    if(confirm(`Tem certeza que deseja excluir o usuário "${user}"?`)){
-      deleteUser(user,success=>{
-        if(success){
-          alert('Usuário excluído!');
-          localStorage.removeItem('loggedUser');
-          showScreen('login');
-        } else alert('Erro ao excluir usuário.');
-      });
-    }
-  });
-  
-  // Função para listar usuários
+// ---------------- Nova tela: listar usuários ----------------
 function listarUsuarios() {
-  userList.innerHTML = ''; // limpa lista anterior
+  userList.innerHTML = ''; 
   const tx = db.transaction(['usuarios'], 'readonly');
   const store = tx.objectStore('usuarios');
   const req = store.openCursor();
@@ -283,7 +296,6 @@ function listarUsuarios() {
     if (cursor) {
       const { username, password } = cursor.value;
 
-      // cria os inputs
       const container = document.createElement('div');
       container.style.marginBottom = '15px';
 
@@ -307,39 +319,16 @@ function listarUsuarios() {
   };
 }
 
-// Evento: abrir tela de usuários
 showUsersBtn.addEventListener('click', () => {
   listarUsuarios();
   showScreen('userList');
 });
 
-// Evento: voltar à tela principal
 btnBackToApp.addEventListener('click', () => {
   showApp(localStorage.getItem('loggedUser'));
 });
 
-  logoutBtn.addEventListener('click', () => {
-    // Remove usuário logado
-    localStorage.removeItem('loggedUser');
-
-    // Limpa os campos de login e a mensagem
-    usernameInput.value = '';
-    passwordInput.value = '';
-    loginMsg.textContent = '';
-
-    // Mostra a tela de login
-    showScreen('login');
-
-    // Opcional: força o navegador a resetar autofill (funciona na maioria dos navegadores)
-    usernameInput.blur();
-    passwordInput.blur();
-    setTimeout(() => {
-      usernameInput.focus();
-      usernameInput.blur();
-    }, 50);
-  });
-
-    // ---------------- Service Worker ----------------
+// ---------------- Service Worker ----------------
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(reg => {
@@ -352,6 +341,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
 <footer id="appVersion" style="
   position: fixed;
   bottom: 10px;
@@ -364,6 +354,8 @@ if ('serviceWorker' in navigator) {
 </footer>
 </body>
 </html>
+
+
 
 
 
