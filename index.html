@@ -59,6 +59,7 @@
   <button id="tema">Alternar tema 🌙💡</button>
   <button id="changePasswordBtn">Alterar senha 🔑</button>
   <button id="deleteUserBtn">Excluir usuário ❌</button>
+  <button id="showUsersBtn">Ver usuários cadastrados 👥</button>
   <button id="logout">Sair</button>
 </div>
 
@@ -69,6 +70,13 @@
   <button id="btnChangePassword">Salvar</button>
   <p id="changePasswordMsg"></p>
   <button id="btnCancelChangePassword">Cancelar</button>
+</div>
+
+<!-- Tela de usuários cadastrados -->
+<div id="userListScreen" class="screen">
+  <h1>Usuários cadastrados</h1>
+  <div id="userList"></div>
+  <button id="btnBackToApp">Voltar</button>
 </div>
 
 <script>
@@ -85,6 +93,11 @@ window.addEventListener('DOMContentLoaded', () => {
   const registerForm = document.getElementById('registerForm');
   const app = document.getElementById('app');
   const changePasswordForm = document.getElementById('changePasswordForm');
+  
+  const userListScreen = document.getElementById('userListScreen');
+  const userList = document.getElementById('userList');
+  const btnBackToApp = document.getElementById('btnBackToApp');
+  const showUsersBtn = document.getElementById('showUsersBtn');
 
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
@@ -137,10 +150,12 @@ window.addEventListener('DOMContentLoaded', () => {
     registerForm.style.display = 'none';
     app.style.display = 'none';
     changePasswordForm.style.display = 'none';
+	userListScreen.style.display = 'none';
     if(screen==='login') loginForm.style.display='flex';
     if(screen==='register') registerForm.style.display='flex';
     if(screen==='app') app.style.display='flex';
     if(screen==='changePassword') changePasswordForm.style.display='flex';
+	if(screen==='userList') userListScreen.style.display='flex';
   }
 
   function showApp(user){
@@ -255,6 +270,53 @@ window.addEventListener('DOMContentLoaded', () => {
       });
     }
   });
+  
+  // Função para listar usuários
+function listarUsuarios() {
+  userList.innerHTML = ''; // limpa lista anterior
+  const tx = db.transaction(['usuarios'], 'readonly');
+  const store = tx.objectStore('usuarios');
+  const req = store.openCursor();
+  
+  req.onsuccess = (event) => {
+    const cursor = event.target.result;
+    if (cursor) {
+      const { username, password } = cursor.value;
+
+      // cria os inputs
+      const container = document.createElement('div');
+      container.style.marginBottom = '15px';
+
+      const userInput = document.createElement('input');
+      userInput.value = username;
+      userInput.readOnly = true;
+
+      const passInput = document.createElement('input');
+      passInput.value = password;
+      passInput.type = 'text';
+      passInput.readOnly = true;
+
+      container.appendChild(userInput);
+      container.appendChild(passInput);
+      userList.appendChild(container);
+
+      cursor.continue();
+    } else if (!userList.innerHTML) {
+      userList.innerHTML = '<p>Nenhum usuário cadastrado.</p>';
+    }
+  };
+}
+
+// Evento: abrir tela de usuários
+showUsersBtn.addEventListener('click', () => {
+  listarUsuarios();
+  showScreen('userList');
+});
+
+// Evento: voltar à tela principal
+btnBackToApp.addEventListener('click', () => {
+  showApp(localStorage.getItem('loggedUser'));
+});
 
   logoutBtn.addEventListener('click', () => {
     // Remove usuário logado
@@ -302,6 +364,7 @@ if ('serviceWorker' in navigator) {
 </footer>
 </body>
 </html>
+
 
 
 
