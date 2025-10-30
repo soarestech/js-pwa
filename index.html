@@ -27,6 +27,14 @@
     body[data-theme="dark"] { background: #1e1e1e; color: #f5f5f5; }
     body[data-theme="dark"] input, body[data-theme="dark"] button { background: #333; color: #f5f5f5; border: none; }
     body[data-theme="light"] input, body[data-theme="light"] button { background: #fff; color: #333; border: 1px solid #ccc; }
+
+    footer {
+      margin-top: auto;
+      padding: 10px;
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -78,15 +86,19 @@
   <button id="btnBackToApp">Voltar</button>
 </div>
 
+<footer class="footer">
+  <p>Versão: <span id="js-pwa-version"></span></p>
+</footer>
+
 <script>
 // ---------------- Versão do App ----------------
 const appVersion = '1.0.2'; // altere a cada atualização
 
 window.addEventListener('DOMContentLoaded', () => {
-  const versionEl = document.getElementById('appVersion');
-  if (versionEl) versionEl.textContent = `Versão: ${appVersion}`;
+  const versionEl = document.getElementById('js-pwa-version');
+  if (versionEl) versionEl.textContent = appVersion;
 });
-  
+
 // ---------------- Elementos ----------------
 const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
@@ -276,12 +288,6 @@ logoutBtn.addEventListener('click', () => {
   passwordInput.value = '';
   loginMsg.textContent = '';
   showScreen('login');
-  usernameInput.blur();
-  passwordInput.blur();
-  setTimeout(() => {
-    usernameInput.focus();
-    usernameInput.blur();
-  }, 50);
 });
 
 // ---------------- Nova tela: listar usuários ----------------
@@ -328,59 +334,28 @@ btnBackToApp.addEventListener('click', () => {
   showApp(localStorage.getItem('loggedUser'));
 });
 
-// Verifica se o Service Worker é suportado
-if ('serviceWorker' in navigator) {
-  // Adiciona um listener para mensagens do Service Worker
-  navigator.serviceWorker.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'version') {
-      const versionSpan = document.getElementById('pwa-version');
-      if (versionSpan) {
-        versionSpan.textContent = event.data.version;
-      }
-    }
-  });
-}
-
 // ---------------- Service Worker ----------------
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(reg => {
-      reg.unregister().then(() => console.log('❌ Service Worker antigo removido'));
-    });
-  }).finally(() => {
-    navigator.serviceWorker.register('service-worker.js')
-      .then(() => console.log('✅ Novo Service Worker registrado e cache atualizado'))
-      .catch(err => console.error('❌ Falha ao registrar SW:', err));
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'version') {
+      const versionEl = document.getElementById('js-pwa-version');
+      if (versionEl) versionEl.textContent = event.data.version;
+    }
   });
-}
 
-// Atualiza a versão mostrada no rodapé
-const footerVersion = document.querySelector('footer p');
-if (footerVersion) {
-  footerVersion.textContent = `Versão ${appVersion}`;
+  navigator.serviceWorker.getRegistrations()
+    .then(regs => Promise.all(regs.map(reg => reg.unregister())))
+    .then(() => {
+      console.log('❌ Service Worker antigo removido');
+      return navigator.serviceWorker.register('service-worker.js');
+    })
+    .then(() => console.log('✅ Novo Service Worker registrado e cache atualizado'))
+    .catch(err => console.error('❌ Falha ao registrar SW:', err));
 }
 </script>
 
-<footer class="footer">
-  <p>Versão: <span id="js-pwa-version"></span></p>
-</footer>
-
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
