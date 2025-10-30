@@ -2,25 +2,19 @@
 const CACHE_VERSION = '1.0.2'; // mesma versão do index.html
 const CACHE_NAME = `js-pwa-cache-${CACHE_VERSION}`;
 
-// Lista de arquivos para cache
-const filesToCache = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/script.js'
-];
-
 // 🔹 Arquivos essenciais a cachear
 const URLS_TO_CACHE = [
   '/js-pwa/index.html',
   '/js-pwa/manifest.json',
   '/js-pwa/icon-192.png',
-  '/js-pwa/icon-512.png'
+  '/js-pwa/icon-512.png',
+  '/js-pwa/styles.css',
+  '/js-pwa/script.js'
 ];
 
 // ---------------- Install: cache inicial ----------------
 self.addEventListener('install', event => {
-  console.log('🔹 Service Worker: Instalando e cacheando arquivos...');
+  console.log('🔹 [SW] Instalando e cacheando arquivos...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(URLS_TO_CACHE))
@@ -28,36 +22,30 @@ self.addEventListener('install', event => {
   self.skipWaiting(); // ativa imediatamente
 });
 
-// ---------------- Activate: remove caches antigos ----------------
+// ---------------- Activate: remove caches antigos e envia versão ----------------
 self.addEventListener('activate', event => {
-  console.log('🔹 Service Worker: Ativando e limpando caches antigos...');
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME) // remove caches que não são a versão atual
-          .map(key => caches.delete(key))
-      )
-    )
-  );
-  self.clients.claim(); // assume controle imediatamente
-});
+  console.log('🔹 [SW] Ativando e limpando caches antigos...');
+  event.waitUntil((async () => {
+    // Remove caches antigos
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+    );
 
-// Adicione esta parte ao seu service worker
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    // ... código de limpeza de cache antigo
-    self.clients.claim().then(() => {
-      self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({
-            type: 'version',
-            version: VERSION
-          });
-        });
+    // Assume controle imediatamente
+    await self.clients.claim();
+
+    // Envia a versão atual aos clientes abertos
+    const clientsList = await self.clients.matchAll();
+    for (const client of clientsList) {
+      client.postMessage({
+        type: 'version',
+        version: CACHE_VERSION
       });
-    })
-  );
+    }
+
+    console.log(`🔹 [SW] Versão ${CACHE_VERSION} enviada aos clientes.`);
+  })());
 });
 
 // ---------------- Fetch: intercepta requisições ----------------
@@ -99,7 +87,3 @@ self.addEventListener('fetch', event => {
     );
   }
 });
-
-
-
-
