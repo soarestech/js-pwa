@@ -82,6 +82,11 @@
 // ---------------- Versão do App ----------------
 const appVersion = '1.0.2'; // altere a cada atualização
 
+window.addEventListener('DOMContentLoaded', () => {
+  const versionEl = document.getElementById('appVersion');
+  if (versionEl) versionEl.textContent = `Versão: ${appVersion}`;
+});
+  
 // ---------------- Elementos ----------------
 const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
@@ -323,6 +328,19 @@ btnBackToApp.addEventListener('click', () => {
   showApp(localStorage.getItem('loggedUser'));
 });
 
+// Verifica se o Service Worker é suportado
+if ('serviceWorker' in navigator) {
+  // Adiciona um listener para mensagens do Service Worker
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'version') {
+      const versionSpan = document.getElementById('pwa-version');
+      if (versionSpan) {
+        versionSpan.textContent = event.data.version;
+      }
+    }
+  });
+}
+
 // ---------------- Service Worker ----------------
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
@@ -343,18 +361,13 @@ if (footerVersion) {
 }
 </script>
 
-<footer style="
-  position: fixed;
-  bottom: 10px;
-  right: 10px;
-  font-size: 12px;
-  color: #777;
-  opacity: 0.7;
-">
-  <p></p>
+<footer class="footer">
+  <p>Versão: <span id="js-pwa-version"></span></p>
 </footer>
+
 </body>
 </html>
+
 
 
 
