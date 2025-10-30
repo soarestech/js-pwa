@@ -1,5 +1,5 @@
 // 🔹 Nome do cache e versão manual (aumente quando fizer deploy)
-const CACHE_VERSION = '1.0.2'; // mesma versão do index.html
+const CACHE_VERSION = '1.0.3'; // atualize sempre que subir nova versão
 const CACHE_NAME = `js-pwa-cache-${CACHE_VERSION}`;
 
 // 🔹 Arquivos essenciais a cachear
@@ -59,24 +59,18 @@ self.addEventListener('fetch', event => {
   if (requestURL.pathname.endsWith('index.html')) {
     event.respondWith(
       fetch(event.request)
-        .then(response => {
-          // Atualiza cache com a versão nova
-          return caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, response.clone());
-            return response;
-          });
-        })
+        .then(response => caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, response.clone());
+          return response;
+        }))
         .catch(() => caches.match(event.request))
     );
   } else {
     event.respondWith(
       caches.match(event.request)
         .then(response => response || fetch(event.request).then(fetchResponse => {
-          // Atualiza cache com a resposta nova
-          return caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, fetchResponse.clone());
-            return fetchResponse;
-          });
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, fetchResponse.clone()));
+          return fetchResponse;
         }))
         .catch(() => {
           // fallback simples offline
@@ -87,3 +81,12 @@ self.addEventListener('fetch', event => {
     );
   }
 });
+
+// ---------------- Força atualização automática ----------------
+// Sempre que o SW detectar que existe uma versão nova, envia para todas as abas
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'check-update') {
+    self.skipWaiting(); // força o SW ativar imediatamente
+  }
+});
+
