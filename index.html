@@ -29,14 +29,14 @@
     body[data-theme="light"] input, body[data-theme="light"] button { background: #fff; color: #333; border: 1px solid #ccc; }
 
     footer {
-  background: transparent;       /* deixa transparente para não cobrir conteúdo */
-  color: #555;                  /* cor discreta */
-  font-size: 0.9rem;
-  position: fixed;
-  bottom: 5px;                  /* pequeno espaço do rodapé */
-  right: 10px;                  /* distância da borda direita */
-  z-index: 1000;
-}
+      background: transparent;
+      color: #555;
+      font-size: 0.9rem;
+      position: fixed;
+      bottom: 5px;
+      right: 10px;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
@@ -94,7 +94,7 @@
 
 <script>
 // ---------------- Versão do App ----------------
-const appVersion = '1.0.2'; // altere a cada atualização
+const appVersion = '1.0.3'; // altere a cada atualização
 
 window.addEventListener('DOMContentLoaded', () => {
   const versionEl = document.getElementById('js-pwa-version');
@@ -148,7 +148,6 @@ request.onupgradeneeded = (event) => {
     store.createIndex('username', 'username', { unique: true });
   }
 };
-
 request.onsuccess = (event) => {
   db = event.target.result;
   console.log('✅ Banco IndexedDB aberto');
@@ -163,7 +162,6 @@ function showScreen(screen){
   app.style.display = 'none';
   changePasswordForm.style.display = 'none';
   userListScreen.style.display = 'none';
-
   if(screen==='login') loginForm.style.display='flex';
   if(screen==='register') registerForm.style.display='flex';
   if(screen==='app') app.style.display='flex';
@@ -223,10 +221,8 @@ btnLogin.addEventListener('click', ()=>{
     } else loginMsg.textContent='Usuário ou senha incorretos!';
   });
 });
-
 btnGoRegister.addEventListener('click', ()=>showScreen('register'));
 btnGoLogin.addEventListener('click', ()=>showScreen('login'));
-
 btnRegister.addEventListener('click', ()=>{
   const user = regUsernameInput.value.trim();
   const pass = regPasswordInput.value.trim();
@@ -234,33 +230,23 @@ btnRegister.addEventListener('click', ()=>{
   const tx = db.transaction(['usuarios'],'readwrite');
   const store = tx.objectStore('usuarios');
   const req = store.add({username:user,password:pass});
-  req.onsuccess = ()=>{
-    registerMsg.textContent='Usuário cadastrado!';
-    regUsernameInput.value='';
-    regPasswordInput.value='';
-  };
+  req.onsuccess = ()=>{ registerMsg.textContent='Usuário cadastrado!'; regUsernameInput.value=''; regPasswordInput.value=''; };
   req.onerror = ()=>registerMsg.textContent='Erro: usuário já existe!';
 });
-
 botao.addEventListener('click', ()=>mensagem.textContent='Você clicou no botão! 🚀');
-
 botaoTema.addEventListener('click', ()=>{
   const newTheme = body.dataset.theme==='dark'?'light':'dark';
   body.dataset.theme = newTheme;
   localStorage.setItem('theme', newTheme);
 });
-
 const savedTheme = localStorage.getItem('theme');
 if(savedTheme) body.dataset.theme=savedTheme;
-
 changePasswordBtn.addEventListener('click', ()=>{
   changePasswordMsg.textContent='';
   newPasswordInput.value='';
   showScreen('changePassword');
 });
-
 btnCancelChangePassword.addEventListener('click', ()=>showApp(localStorage.getItem('loggedUser')));
-
 btnChangePassword.addEventListener('click', ()=>{
   const newPass = newPasswordInput.value.trim();
   if(!newPass){ changePasswordMsg.textContent='Digite a nova senha!'; return; }
@@ -270,7 +256,6 @@ btnChangePassword.addEventListener('click', ()=>{
     if(success) newPasswordInput.value='';
   });
 });
-
 deleteUserBtn.addEventListener('click', ()=>{
   const user = localStorage.getItem('loggedUser');
   if(confirm(`Tem certeza que deseja excluir o usuário "${user}"?`)){
@@ -283,7 +268,6 @@ deleteUserBtn.addEventListener('click', ()=>{
     });
   }
 });
-
 logoutBtn.addEventListener('click', () => {
   localStorage.removeItem('loggedUser');
   usernameInput.value = '';
@@ -303,23 +287,18 @@ function listarUsuarios() {
     const cursor = event.target.result;
     if (cursor) {
       const { username, password } = cursor.value;
-
       const container = document.createElement('div');
       container.style.marginBottom = '15px';
-
       const userInput = document.createElement('input');
       userInput.value = username;
       userInput.readOnly = true;
-
       const passInput = document.createElement('input');
       passInput.value = password;
       passInput.type = 'text';
       passInput.readOnly = true;
-
       container.appendChild(userInput);
       container.appendChild(passInput);
       userList.appendChild(container);
-
       cursor.continue();
     } else if (!userList.innerHTML) {
       userList.innerHTML = '<p>Nenhum usuário cadastrado.</p>';
@@ -331,7 +310,6 @@ showUsersBtn.addEventListener('click', () => {
   listarUsuarios();
   showScreen('userList');
 });
-
 btnBackToApp.addEventListener('click', () => {
   showApp(localStorage.getItem('loggedUser'));
 });
@@ -358,6 +336,7 @@ if ('serviceWorker' in navigator) {
 
 </body>
 </html>
+
 
 
 
