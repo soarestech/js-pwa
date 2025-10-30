@@ -2,6 +2,14 @@
 const CACHE_VERSION = '1.0.2'; // mesma versão do index.html
 const CACHE_NAME = `js-pwa-cache-${CACHE_VERSION}`;
 
+// Lista de arquivos para cache
+const filesToCache = [
+  '/',
+  '/index.html',
+  '/styles.css',
+  '/script.js'
+];
+
 // 🔹 Arquivos essenciais a cachear
 const URLS_TO_CACHE = [
   '/js-pwa/index.html',
@@ -33,6 +41,23 @@ self.addEventListener('activate', event => {
     )
   );
   self.clients.claim(); // assume controle imediatamente
+});
+
+// Adicione esta parte ao seu service worker
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    // ... código de limpeza de cache antigo
+    self.clients.claim().then(() => {
+      self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'version',
+            version: VERSION
+          });
+        });
+      });
+    })
+  );
 });
 
 // ---------------- Fetch: intercepta requisições ----------------
@@ -74,6 +99,7 @@ self.addEventListener('fetch', event => {
     );
   }
 });
+
 
 
 
